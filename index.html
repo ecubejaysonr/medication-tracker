@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="tl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#176b55">
+<meta name="description" content="Personal medication tracker">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>Medication Tracker</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#172522;background:#f3f7f5}
+*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{background:#176b55;color:white;padding:22px 18px 20px;border-radius:0 0 22px 22px}
+h1{font-size:23px;margin:0 0 4px}header p{margin:0;color:#d8eee7;font-size:13px}
+main{max-width:620px;margin:auto;padding:16px}
+.panel{background:white;border-radius:16px;padding:15px;margin:0 0 14px;box-shadow:0 2px 12px #173b2c0d}
+.progressline{height:9px;background:#e5ece8;border-radius:20px;overflow:hidden;margin:10px 0 5px}
+#progress{height:100%;width:0;background:#16845f;transition:width .2s}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.small{font-size:12px;color:#60716b}.big{font-size:24px;font-weight:750;color:#176b55}
+select,button{font:inherit;border-radius:11px;padding:10px 12px;border:1px solid #d6e1db;background:white;color:#17352b}
+select{width:100%;margin-top:8px}
+.med{border:1px solid #e1eae5;border-radius:13px;padding:13px;margin-top:10px}
+.med strong{display:block;font-size:16px}.med .details{font-size:13px;color:#64746d;margin:4px 0 10px}
+.check{display:flex;align-items:center;gap:10px;font-weight:650;color:#176b55}
+input[type=checkbox]{width:23px;height:23px;accent-color:#16845f}
+.done{background:#eff9f3;border-color:#b9dfc8}
+button.primary{background:#176b55;color:white;border:0}
+button.danger{color:#a12d2d;border-color:#edcaca}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.note{font-size:12px;line-height:1.5;color:#65736d}
+footer{text-align:center;color:#718078;font-size:11px;padding:12px 10px 24px}
+</style>
+</head>
+<body>
+<header>
+  <h1>💊 Medication Tracker</h1>
+  <p>Personal medicine checklist · Nov 6–12, 2026</p>
+</header>
+<main>
+  <section class="panel">
+    <div class="row"><b>Weekly progress</b><span class="big" id="count">0/0</span></div>
+    <div class="progressline"><div id="progress"></div></div>
+    <div class="small" id="percent">0% completed · saved on this device</div>
+  </section>
+  <section class="panel">
+    <b>Pumili ng araw</b>
+    <select id="day"></select>
+    <div class="row" style="margin-top:12px"><b id="dayTitle">Friday, November 6</b><span class="small" id="dayCount"></span></div>
+    <div id="medList"></div>
+  </section>
+  <section class="panel">
+    <b>Medication reference</b>
+    <p class="note">Furosemide 40 mg — Friday, Sunday, Tuesday, 7:00 AM (dose based on the previous schedule).</p>
+    <p class="note">Cefuroxime 500 mg — 1 tablet every 12 hours for 7 days; 8:00 AM and 8:00 PM after food.</p>
+    <p class="note">Azithromycin 500 mg — 1 tablet once daily after a full meal for 7 days; 9:00 AM.</p>
+    <p class="note">Spironolactone 25 mg — once daily in the morning on Saturday, Monday, Wednesday.</p>
+    <p class="note"><b>Important:</b> Sundin ang pinakahuling reseta ng doktor. Kung iba ang nakasulat sa reseta, iyon ang masusunod. Huwag magdoble ng dose kapag may nakaligtaan.</p>
+  </section>
+  <div class="actions">
+    <button class="primary" id="install" hidden>Install app</button>
+    <button class="danger" id="reset">Reset all checkmarks</button>
+  </div>
+  <p class="note">Ang checkmarks ay awtomatikong sine-save sa browser ng device na ito. Hindi ito medical advice at hindi pa ito nagse-set ng automatic alarm.</p>
+</main>
+<footer>Medication Tracker · Personal use</footer>
+<script>
+const days = [
+ {id:"2026-11-06",label:"Friday, November 6",items:[
+  ["f","Furosemide 40 mg","7:00 AM · As prescribed"],
+  ["c-am","Cefuroxime 500 mg","8:00 AM · After food"],
+  ["a","Azithromycin 500 mg","9:00 AM · After a full meal"],
+  ["c-pm","Cefuroxime 500 mg","8:00 PM · After food"]]},
+ {id:"2026-11-07",label:"Saturday, November 7",items:[
+  ["s","Spironolactone 25 mg","Morning · Once daily"],
+  ["c-am","Cefuroxime 500 mg","8:00 AM · After food"],
+  ["a","Azithromycin 500 mg","9:00 AM · After a full meal"],
+  ["c-pm","Cefuroxime 500 mg","8:00 PM · After food"]]},
+ {id:"2026-11-08",label:"Sunday, November 8",items:[
+  ["f","Furosemide 40 mg","7:00 AM · As prescribed"],
+  ["c-am","Cefuroxime 500 mg","8:00 AM · After food"],
+  ["a","Azithromycin 500 mg","9:00 AM · After a full meal"],
+  ["c-pm","Cefuroxime 500 mg","8:00 PM · After food"]]},
+ {id:"2026-11-09",label:"Monday, November 9",items:[
+  ["s","Spironolactone 25 mg","Morning · Once daily"],
+  ["c-am","Cefuroxime 500 mg","8:00 AM · After food"],
+  ["a","Azithromycin 500 mg","9:00 AM · After a full meal"],
+  ["c-pm","Cefuroxime 500 mg","8:00 PM · After food"]]},
+ {id:"2026-11-10",label:"Tuesday, November 10",items:[
+  ["f","Furosemide 40 mg","7:00 AM · As prescribed"],
+  ["c-am","Cefuroxime 500 mg","8:00 AM · After food"],
+  ["a","Azithromycin 500 mg","9:00 AM · After a full meal"],
+  ["c-pm","Cefuroxime 500 mg","8:00 PM · After food"]]},
+ {id:"2026-11-11",label:"Wednesday, November 11",items:[
+  ["s","Spironolactone 25 mg","Morning · Once daily"],
+  ["c-am","Cefuroxime 500 mg","8:00 AM · After food"],
+  ["a","Azithromycin 500 mg","9:00 AM · After a full meal"],
+  ["c-pm","Cefuroxime 500 mg","8:00 PM · After food"]]},
+ {id:"2026-11-12",label:"Thursday, November 12",items:[
+  ["c-am","Cefuroxime 500 mg","8:00 AM · After food"],
+  ["a","Azithromycin 500 mg","9:00 AM · After a full meal"],
+  ["c-pm","Cefuroxime 500 mg","8:00 PM · After food"]]}
+];
+const storeKey="med-tracker-v1";
+let checks={}; try{checks=JSON.parse(localStorage.getItem(storeKey)||"{}")}catch(e){}
+const daySelect=document.getElementById("day"), list=document.getElementById("medList");
+days.forEach((d,i)=>{let o=document.createElement("option");o.value=i;o.textContent=d.label;daySelect.appendChild(o)});
+function save(){localStorage.setItem(storeKey,JSON.stringify(checks));render()}
+function render(){
+ const all=days.flatMap(d=>d.items.map(m=>d.id+"-"+m[0]));
+ const done=all.filter(k=>checks[k]).length;
+ document.getElementById("count").textContent=done+"/"+all.length;
+ document.getElementById("progress").style.width=(done/all.length*100)+"%";
+ document.getElementById("percent").textContent=Math.round(done/all.length*100)+"% completed · saved on this device";
+ const d=days[Number(daySelect.value)||0];document.getElementById("dayTitle").textContent=d.label;
+ const n=d.items.filter(m=>checks[d.id+"-"+m[0]]).length;
+ document.getElementById("dayCount").textContent=n+"/"+d.items.length+" done";
+ list.innerHTML="";
+ d.items.forEach(m=>{
+  const key=d.id+"-"+m[0], card=document.createElement("div");
+  card.className="med"+(checks[key]?" done":"");
+  const label=document.createElement("label");label.className="check";
+  const cb=document.createElement("input");cb.type="checkbox";cb.checked=!!checks[key];
+  cb.addEventListener("change",()=>{checks[key]=cb.checked;save()});
+  const name=document.createElement("span");name.textContent=m[1];
+  label.append(cb,name);
+  const details=document.createElement("div");details.className="details";details.textContent=m[2];
+  card.append(label,details);list.appendChild(card);
+ });
+}
+daySelect.addEventListener("change",render);
+document.getElementById("reset").addEventListener("click",()=>{
+ if(confirm("Sigurado ka bang i-reset ang lahat ng checkmarks?")){checks={};save()}
+});
+let installPrompt;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;document.getElementById("install").hidden=false});
+document.getElementById("install").addEventListener("click",async()=>{
+ if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;
+ document.getElementById("install").hidden=true;
+});
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js");
+render();
+</script>
+</body>
+</html>
